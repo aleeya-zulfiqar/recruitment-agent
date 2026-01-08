@@ -1,0 +1,6 @@
+We are looking for a Frontend Developer.
+Requirements:
+- React
+- JavaScript
+- Minimum 2 years experience
+- Experience with REST APIs
