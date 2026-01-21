@@ -1,0 +1,1096 @@
+{
+  "name": "Recruitment",
+  "nodes": [
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "939c7eb4-c275-4abe-9c70-68c2b3dcd676",
+              "leftValue": "={{ $json.screening.match_score }}",
+              "rightValue": 75,
+              "operator": {
+                "type": "number",
+                "operation": "gte"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        448,
+        96
+      ],
+      "id": "ae87dbae-5849-44f1-849f-d4b6d6395931",
+      "name": "isShortlisted?"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://guarantee-yesterday-matt-may.trycloudflare.com/screen",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "content-type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "candidate_name",
+              "value": "={{ $json.candidate_name }}"
+            },
+            {
+              "name": "candidate_email",
+              "value": "={{ $json.candidate_email }}"
+            },
+            {
+              "name": "job_title",
+              "value": "={{ $json.job_title }}"
+            },
+            {
+              "name": "job_description",
+              "value": "={{ $json.job_description }}"
+            },
+            {
+              "name": "resume_text",
+              "value": "={{ $json.resume_text }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        224,
+        96
+      ],
+      "id": "5f0157b2-f557-4e0a-b3c1-9079a6a09ec3",
+      "name": "Resume Screening Agent"
+    },
+    {
+      "parameters": {
+        "formTitle": "Apply For Your Dream Job",
+        "formDescription": "Please fill in this job application form to land your dream job.",
+        "formFields": {
+          "values": [
+            {
+              "fieldName": "candidate_name",
+              "fieldLabel": "Full Name",
+              "requiredField": true
+            },
+            {
+              "fieldName": "candidate_email",
+              "fieldLabel": "Email",
+              "fieldType": "email",
+              "requiredField": true
+            },
+            {
+              "fieldName": "job_title",
+              "fieldLabel": "Job Title",
+              "requiredField": true
+            },
+            {
+              "fieldName": "job_description",
+              "fieldLabel": "Job Description",
+              "fieldType": "textarea",
+              "requiredField": true
+            },
+            {
+              "fieldName": "resume_text",
+              "fieldLabel": "Resume (text only)",
+              "fieldType": "textarea",
+              "requiredField": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.4,
+      "position": [
+        0,
+        96
+      ],
+      "id": "e3bc253f-65be-4d25-ba12-6f3c84bfbf98",
+      "name": "Job Application Form",
+      "webhookId": "ddd32055-deb8-4488-b364-7bac85b972db"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://guarantee-yesterday-matt-may.trycloudflare.com/evaluate",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "content-type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "candidate_info",
+              "value": "={{ $('Question Generation Agent').item.json.candidate }}"
+            },
+            {
+              "name": "job_info",
+              "value": "={{ $('Question Generation Agent').item.json.job }}"
+            },
+            {
+              "name": "screening_info",
+              "value": "={{ $('Question Generation Agent').item.json.screening }}"
+            },
+            {
+              "name": "answer1",
+              "value": "={{ $json.question1 }}"
+            },
+            {
+              "name": "answer2",
+              "value": "={{ $json.question2 }}"
+            },
+            {
+              "name": "answer3",
+              "value": "={{ $json.question3 }}"
+            },
+            {
+              "name": "answer4",
+              "value": "={{ $json.question4 }}"
+            },
+            {
+              "name": "answer5",
+              "value": "={{ $json.question5 }}"
+            },
+            {
+              "name": "submission_time",
+              "value": "={{ $json.submittedAt }}"
+            },
+            {
+              "name": "questions",
+              "value": "={{ $('Question Generation Agent').item.json.questions }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        1120,
+        96
+      ],
+      "id": "24408527-f007-4b24-90de-a67c5c254e07",
+      "name": "Evaluation Agent"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.decision }}",
+                    "rightValue": "Strong Fit",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "97cc3e59-ee59-480d-9560-2a9d4ca4a973"
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "e99247d0-f15f-4c4a-8b89-8ca434ccfabe",
+                    "leftValue": "={{ $json.decision }}",
+                    "rightValue": "Partial Fit",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "20eaf0ca-3906-4be0-9748-ae0ebd2860e8",
+                    "leftValue": "={{ $json.decision }}",
+                    "rightValue": "Reject",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        1344,
+        80
+      ],
+      "id": "5520bbe0-c92c-45ff-be94-0b93ccbe0f8c",
+      "name": "Hiring Decision"
+    },
+    {
+      "parameters": {
+        "resource": "draft",
+        "subject": "Job Interview Result",
+        "message": "=Dear Candidate,\n\nCongratulations! You have been selected for your dream job!\n\nThe HR team will guide you about further steps.\n\nGood luck with your job!",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1568,
+        -96
+      ],
+      "id": "367f91a8-5869-40d8-8efb-40bb44aaa7f5",
+      "name": "Job Offer Draft",
+      "webhookId": "e4e2274c-7625-4dc5-8068-5b6d013a6d47",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "9R0imrqDrV7EDKUH",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('Question Generation Agent').item.json.candidate.email }}",
+        "subject": "Job Interview Update",
+        "message": "=Dear Candidate,\n\nYour interview is under review. You are on our waitlist.\n\nStay tuned for further email from the HR team.\n\nBest regards",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1568,
+        96
+      ],
+      "id": "0b03dc36-74a9-4e0b-bb08-0c764f86da0b",
+      "name": "On hold Email",
+      "webhookId": "93d6c095-4380-4cfa-8df9-790416535ba4",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "9R0imrqDrV7EDKUH",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('Question Generation Agent').item.json.candidate.email }}",
+        "subject": "Job Interview Update",
+        "emailType": "text",
+        "message": "=Dear Candidate,\n\nThank you for applying. Unfortunately, you were not shortlisted for the job. You may try again in the next intake.\n\nStay tuned.\n\nBest regards",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1568,
+        288
+      ],
+      "id": "edc54820-37a9-41d4-a178-671ab6997cf2",
+      "name": "Rejection Email",
+      "webhookId": "1b37922d-e8d3-44e3-965c-19eda225be75",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "9R0imrqDrV7EDKUH",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "formFields": {
+          "values": [
+            {
+              "fieldName": "question1",
+              "fieldLabel": "={{ $json.questions[0] }}",
+              "fieldType": "textarea",
+              "requiredField": true
+            },
+            {
+              "fieldName": "question2",
+              "fieldLabel": "={{ $json.questions[1] }}",
+              "fieldType": "textarea",
+              "requiredField": true
+            },
+            {
+              "fieldName": "question3",
+              "fieldLabel": "={{ $json.questions[2] }}",
+              "fieldType": "textarea",
+              "requiredField": true
+            },
+            {
+              "fieldName": "question4",
+              "fieldLabel": "={{ $json.questions[3] }}",
+              "fieldType": "textarea",
+              "requiredField": true
+            },
+            {
+              "fieldName": "question5",
+              "fieldLabel": "={{ $json.questions[4] }}",
+              "fieldType": "textarea",
+              "requiredField": true
+            }
+          ]
+        },
+        "options": {
+          "formTitle": "Job Interview Form"
+        }
+      },
+      "type": "n8n-nodes-base.form",
+      "typeVersion": 2.4,
+      "position": [
+        896,
+        96
+      ],
+      "id": "93b59b75-aae4-4705-b486-9c199ef6b742",
+      "name": "Interview Form",
+      "webhookId": "641da871-37f5-4fb5-b700-6dfb6aaacbd3"
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('Job Application Form').item.json.candidate_email }}",
+        "subject": "Interview Form Link",
+        "message": "=<p>Dear Candidate,</p>\n\n<p>We've reviewed your resume and are pleased to inform you that you have been shortlisted for the {{ $('Job Application Form').item.json.job_title }} role.</p>\n\n<p>Please start your interview in the newly opened window.</p>\n\n<p>Best of luck!</p>",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        896,
+        -96
+      ],
+      "id": "490e7cb0-5a81-4c4d-badb-3fcbf9769a7f",
+      "name": "Interview Update",
+      "webhookId": "bb7dc83d-9b35-484a-9ea6-c6c93855023d",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "9R0imrqDrV7EDKUH",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('Job Application Form').item.json.candidate_email }}",
+        "subject": "Job Application Result",
+        "emailType": "text",
+        "message": "=Dear Candidate,\n\nThank you for applying. We are sorry to inform you that you could not pass the initial resume screening.\n\nYou may apply again for the next intake.\n\nThank you. ",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        672,
+        192
+      ],
+      "id": "36d91665-93dd-45df-bcf3-b203c298b68d",
+      "name": "Not Shortlisted",
+      "webhookId": "78c2f50f-6cbe-40b7-837b-7e0ef6162905",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "9R0imrqDrV7EDKUH",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://guarantee-yesterday-matt-may.trycloudflare.com/generate_questions",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "content-type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "candidate_info",
+              "value": "={{ $json.candidate }}"
+            },
+            {
+              "name": "job",
+              "value": "={{ $json.job }}"
+            },
+            {
+              "name": "screening",
+              "value": "={{ $json.screening }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        672,
+        0
+      ],
+      "id": "245d24e5-72a2-47e0-821a-be1499a12606",
+      "name": "Question Generation Agent"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1W48MAx_mIVAJhVJpwnr7LmESFq6GQl1zt5pgU2QUGeo",
+          "mode": "list",
+          "cachedResultName": "Recruitment",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1W48MAx_mIVAJhVJpwnr7LmESFq6GQl1zt5pgU2QUGeo/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1W48MAx_mIVAJhVJpwnr7LmESFq6GQl1zt5pgU2QUGeo/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Candidate Name": "={{ $('Question Generation Agent').item.json.candidate.name }}",
+            "Candidate Email": "={{ $('Question Generation Agent').item.json.candidate.email }}",
+            "Job Title": "={{ $('Question Generation Agent').item.json.job.title }}",
+            "Job Description": "={{ $('Question Generation Agent').item.json.job.description }}",
+            "Resume": "={{ $('Question Generation Agent').item.json.candidate.resume_text }}",
+            "Overall Score": "={{ $('Evaluation Agent').item.json.overall_score }}",
+            "Screening Score": "={{ $('Question Generation Agent').item.json.screening.match_score }}",
+            "Decision": "={{ $('Evaluation Agent').item.json.decision }}",
+            "Evaluation Summary": "={{ $('Evaluation Agent').item.json.evaluation_summary }}",
+            "Submitted At": "={{ $('Interview Form').item.json.submittedAt }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Candidate Name",
+              "displayName": "Candidate Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Candidate Email",
+              "displayName": "Candidate Email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Job Title",
+              "displayName": "Job Title",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Job Description",
+              "displayName": "Job Description",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Resume",
+              "displayName": "Resume",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Screening Score",
+              "displayName": "Screening Score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Overall Score",
+              "displayName": "Overall Score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Decision",
+              "displayName": "Decision",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Evaluation Summary",
+              "displayName": "Evaluation Summary",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Submitted At",
+              "displayName": "Submitted At",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1792,
+        -96
+      ],
+      "id": "a847d8ab-7507-43b0-827c-3fd1397559a3",
+      "name": "Update Recruitment Database",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "Nv5T7CdQ5oU6cOb2",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1W48MAx_mIVAJhVJpwnr7LmESFq6GQl1zt5pgU2QUGeo",
+          "mode": "list",
+          "cachedResultName": "Recruitment",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1W48MAx_mIVAJhVJpwnr7LmESFq6GQl1zt5pgU2QUGeo/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1W48MAx_mIVAJhVJpwnr7LmESFq6GQl1zt5pgU2QUGeo/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Candidate Name": "={{ $('Question Generation Agent').item.json.candidate.name }}",
+            "Candidate Email": "={{ $('Question Generation Agent').item.json.candidate.email }}",
+            "Job Title": "={{ $('Question Generation Agent').item.json.job.title }}",
+            "Job Description": "={{ $('Question Generation Agent').item.json.job.description }}",
+            "Resume": "={{ $('Question Generation Agent').item.json.candidate.resume_text }}",
+            "Overall Score": "={{ $('Evaluation Agent').item.json.overall_score }}",
+            "Screening Score": "={{ $('Question Generation Agent').item.json.screening.match_score }}",
+            "Decision": "={{ $('Evaluation Agent').item.json.decision }}",
+            "Evaluation Summary": "={{ $('Evaluation Agent').item.json.evaluation_summary }}",
+            "Submitted At": "={{ $('Interview Form').item.json.submittedAt }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Candidate Name",
+              "displayName": "Candidate Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Candidate Email",
+              "displayName": "Candidate Email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Job Title",
+              "displayName": "Job Title",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Job Description",
+              "displayName": "Job Description",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Resume",
+              "displayName": "Resume",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Screening Score",
+              "displayName": "Screening Score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Overall Score",
+              "displayName": "Overall Score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Decision",
+              "displayName": "Decision",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Evaluation Summary",
+              "displayName": "Evaluation Summary",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Submitted At",
+              "displayName": "Submitted At",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1792,
+        96
+      ],
+      "id": "94cde471-8d0b-4bbf-a0b5-45ff9c3de98c",
+      "name": "Update Recruitment Database1",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "Nv5T7CdQ5oU6cOb2",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1W48MAx_mIVAJhVJpwnr7LmESFq6GQl1zt5pgU2QUGeo",
+          "mode": "list",
+          "cachedResultName": "Recruitment",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1W48MAx_mIVAJhVJpwnr7LmESFq6GQl1zt5pgU2QUGeo/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1W48MAx_mIVAJhVJpwnr7LmESFq6GQl1zt5pgU2QUGeo/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Candidate Name": "={{ $('Question Generation Agent').item.json.candidate.name }}",
+            "Candidate Email": "={{ $('Question Generation Agent').item.json.candidate.email }}",
+            "Job Title": "={{ $('Question Generation Agent').item.json.job.title }}",
+            "Job Description": "={{ $('Question Generation Agent').item.json.job.description }}",
+            "Resume": "={{ $('Question Generation Agent').item.json.candidate.resume_text }}",
+            "Overall Score": "={{ $('Evaluation Agent').item.json.overall_score }}",
+            "Screening Score": "={{ $('Question Generation Agent').item.json.screening.match_score }}",
+            "Decision": "={{ $('Evaluation Agent').item.json.decision }}",
+            "Evaluation Summary": "={{ $('Evaluation Agent').item.json.evaluation_summary }}",
+            "Submitted At": "={{ $('Interview Form').item.json.submittedAt }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Candidate Name",
+              "displayName": "Candidate Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Candidate Email",
+              "displayName": "Candidate Email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Job Title",
+              "displayName": "Job Title",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Job Description",
+              "displayName": "Job Description",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Resume",
+              "displayName": "Resume",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Screening Score",
+              "displayName": "Screening Score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Overall Score",
+              "displayName": "Overall Score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Decision",
+              "displayName": "Decision",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Evaluation Summary",
+              "displayName": "Evaluation Summary",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Submitted At",
+              "displayName": "Submitted At",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1792,
+        288
+      ],
+      "id": "71298c14-8cef-4459-843c-967918408cd8",
+      "name": "Update Recruitment Database2",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "Nv5T7CdQ5oU6cOb2",
+          "name": "Google Sheets account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "isShortlisted?": {
+      "main": [
+        [
+          {
+            "node": "Question Generation Agent",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Not Shortlisted",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Resume Screening Agent": {
+      "main": [
+        [
+          {
+            "node": "isShortlisted?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Job Application Form": {
+      "main": [
+        [
+          {
+            "node": "Resume Screening Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Evaluation Agent": {
+      "main": [
+        [
+          {
+            "node": "Hiring Decision",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Hiring Decision": {
+      "main": [
+        [
+          {
+            "node": "Job Offer Draft",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "On hold Email",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Rejection Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Interview Form": {
+      "main": [
+        [
+          {
+            "node": "Evaluation Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Question Generation Agent": {
+      "main": [
+        [
+          {
+            "node": "Interview Update",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Interview Form",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Job Offer Draft": {
+      "main": [
+        [
+          {
+            "node": "Update Recruitment Database",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "On hold Email": {
+      "main": [
+        [
+          {
+            "node": "Update Recruitment Database1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Rejection Email": {
+      "main": [
+        [
+          {
+            "node": "Update Recruitment Database2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": false
+  },
+  "versionId": "69ca2021-a789-493a-8168-8ab2619abb2e",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "4235d65d3a87985dfd1aa027dd49de15b350c89014a4f96d00244ab7711f1766"
+  },
+  "id": "MhiUy3MiO4yv4mNt07ecd",
+  "tags": []
+}

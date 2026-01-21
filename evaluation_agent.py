@@ -1,8 +1,8 @@
 """
-Agent 3: Evaluation Agent (OpenRouter API)
------------------------------------------------------
-Scores candidate answers from Interviewer Agent (Agent 2)
-and outputs a structured JSON scorecard with reasoning.
+Agent 3: Interview Answers Evaluation Agent (OpenRouterAI)
+-------------------------------------------
+Evaluates candidate answers against interview questions
+and returns structured scoring and hiring decision.
 """
 
 import os
@@ -12,40 +12,56 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-if not OPENAI_API_KEY:
-    raise ValueError("OpenAI API key missing in .env")
+OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
+API_URL = os.getenv("OPENROUTER_API_URL")
+MODEL = os.getenv("OPENROUTER_MODEL", "gpt-4o-mini")
 
-MODEL = "gpt-4o-mini"
-API_URL = "https://openrouter.ai/api/v1/chat/completions"
+if not OPENROUTER_API_KEY or not API_URL:
+    raise ValueError("OpenRouter API config missing in .env")
 
+def evaluate_answers(
+    candidate: dict,
+    job: dict,
+    screening: dict,
+    questions: list,
+    answers: list
+) -> dict:
 
-def evaluate_candidate(candidate_info: str, questions_asked: list) -> dict:
-    """
-    Evaluate the candidate's answers and return a structured scorecard.
-    """
+    qa_pairs = []
+    for idx, (q, a) in enumerate(zip(questions, answers), start=1):
+        if a:
+            qa_pairs.append({
+                "question_number": idx,
+                "question": q,
+                "answer": a
+            })
 
-    system_prompt = f"""
-You are a strict technical evaluator.
-Your task:
-- Score each candidate answer 0–10.
-- Provide reasoning/feedback for each answer.
-- Calculate overall_score (0-100) based on individual scores.
-- Give a final decision: Strong Fit / Partial Fit / Reject.
-- Return output ONLY as JSON with keys:
+    system_prompt = """
+You are a strict technical interviewer and evaluator.
+
+Rules:
+- Score EACH answer from 0–10.
+- Provide short feedback per answer.
+- Calculate overall_score (0–100).
+- Decide one: Strong Fit / Partial Fit / Reject.
+- Return ONLY valid JSON with keys:
   scores, overall_score, decision, evaluation_summary
 """
 
     user_prompt = f"""
-Candidate info:
-{candidate_info}
+Job Role:
+Title: {job['title']}
+Description: {job['description']}
 
-Questions and answers:
-{json.dumps(questions_asked, indent=2)}
+Screening Summary:
+Decision: {screening.get('decision')}
+Match Score: {screening.get('match_score')}
+Experience Level: {screening.get('experience_level')}
 
-Task:
-Evaluate the candidate strictly according to the rubric.
-Return JSON only.
+Interview Q&A:
+{json.dumps(qa_pairs, indent=2)}
+
+Evaluate now.
 """
 
     payload = {
@@ -58,38 +74,76 @@ Return JSON only.
     }
 
     headers = {
-        "Authorization": f"Bearer {OPENAI_API_KEY}",
+        "Authorization": f"Bearer {OPENROUTER_API_KEY}",
         "Content-Type": "application/json",
     }
 
-    try:
-        response = requests.post(API_URL, headers=headers, json=payload, timeout=30)
-        response.raise_for_status()
-        data = response.json()
-        raw_output = data["choices"][0]["message"]["content"]
-        return json.loads(raw_output)
-    except Exception as e:
-        return {"error": f"Failed to evaluate candidate: {str(e)}", "raw_output": raw_output if 'raw_output' in locals() else ""}
+    response = requests.post(API_URL, headers=headers, json=payload, timeout=30)
+    response.raise_for_status()
+
+    raw_output = response.json()["choices"][0]["message"]["content"].strip()
+
+    if raw_output.startswith("```"):
+        raw_output = raw_output.replace("```json", "").replace("```", "").strip()
+
+    return json.loads(raw_output)
 
 
 def main():
-    """Run Evaluation Agent"""
+    """
+    Test run Agent 3
+    """
 
-    candidate_info = """
-Frontend Developer Intern with experience in React, JavaScript,
-API integration, and UI development. Worked on production MVPs
-using React and Tailwind CSS.
-"""
+    try:
+        with open("sample_data/job_description.txt", "r") as f:
+            job_description = f.read()
 
-    # Sample questions_asked from Agent 2
-    questions_asked = [
-        {"question": "Explain closures in JavaScript", "candidate_answer": "A closure is a function that remembers and has access to variables and the scope in which it was created, even after the outer function has finished executing."},
-        {"question": "Describe React state management", "candidate_answer": "I use useState and useReducer to beautify web pages."}
+    except FileNotFoundError as e:
+        print(f"File error: {e}")
+        return
+
+    # Mock inputs
+    candidate = {
+        "name": "Mock Candidate",
+        "email": "candidate@mock.com"
+    }
+
+    job = {
+        "title": "Frontend Developer",
+        "description": job_description
+    }
+
+    screening = {
+        "match_score": 88,
+        "experience_level": "Senior",
+        "decision": "Strong Fit"
+    }
+
+    questions = [
+        "Explain your UI design process.",
+        "How do you conduct usability testing?",
+        "Describe a challenging UX problem you solved.",
+        "How do you ensure accessibility?",
+        "Which metrics define good UX?"
     ]
 
-    print("\nEvaluating candidate...\n")
+    answers = [
+        "I start with user research and personas.",
+        "I use moderated and unmoderated testing.",
+        "A complex dashboard redesign.",
+        "By following WCAG standards.",
+        "Task success rate and user satisfaction."
+    ]
 
-    result = evaluate_candidate(candidate_info, questions_asked)
+    print("\nEvaluating Candidate Answers...\n")
+
+    result = evaluate_answers(
+        candidate=candidate,
+        job=job,
+        screening=screening,
+        questions=questions,
+        answers=answers
+    )
 
     print(json.dumps(result, indent=2))
 

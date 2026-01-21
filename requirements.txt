@@ -1,3 +1,7 @@
 openai
 jsonschema
 python-dotenv
+fastapi
+uvicorn
+pydantic
+requests

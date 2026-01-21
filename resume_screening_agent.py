@@ -1,8 +1,8 @@
 """
-Agent 1: Resume Screening Agent (OpenRouter API)
------------------------------------------------------
-Screens a resume against a job description and returns
-a structured hiring decision in JSON.
+Agent 1: Resume Screening Agent (OpenRouterAI)
+--------------------------------------------------------
+Screens a resume against a job description.
+Returns a strict JSON object with match_score, decision, etc.
 """
 
 import os
@@ -12,21 +12,14 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
+API_URL = os.getenv("OPENROUTER_API_URL")
+MODEL = os.getenv("OPENROUTER_MODEL", "gpt-4o-mini")
 
-if not OPENAI_API_KEY:
-    raise ValueError("OpenAI API key missing. Please set OPENAI_API_KEY in .env")
-
-MODEL = "gpt-4o-mini"
-
-API_URL = "https://openrouter.ai/api/v1/chat/completions"
-
+if not OPENROUTER_API_KEY or not API_URL:
+    raise ValueError("OpenRouterAI API key missing. Please set OPENROUTER_API_KEY in .env")
 
 def screen_candidate(job_description: str, resume_text: str) -> dict:
-    """
-    Screen a resume against a job description using OpenRouter API.
-    Returns a strict JSON object with match_score, decision, etc.
-    """
 
     system_prompt = """
 You are a Resume Screening Agent for hiring teams.
@@ -72,7 +65,7 @@ RESUME:
     }
 
     headers = {
-        "Authorization": f"Bearer {OPENAI_API_KEY}",
+        "Authorization": f"Bearer {OPENROUTER_API_KEY}",
         "Content-Type": "application/json",
     }
 
@@ -96,27 +89,20 @@ RESUME:
 
 
 def main():
-    """Run Resume Screening Agent"""
-
-    jd_file_path = 'sample_data/job_description.txt'
-
-    try:
-        with open(jd_file_path, 'r') as jd:
-            job_description = jd.read()
-    except FileNotFoundError:
-        print(f"Error: The file '{jd_file_path}' was not found.")
-    except Exception as e:
-        print(f"An error occurred: {e}")
-
-    res_file_path = 'sample_data/resume.txt'
+    """
+    Test run Agent 1
+    """
 
     try:
-        with open(res_file_path, 'r') as res:
-            resume_text = res.read()
-    except FileNotFoundError:
-        print(f"Error: The file '{res_file_path}' was not found.")
-    except Exception as e:
-        print(f"An error occurred: {e}")
+        with open("sample_data/resume.txt", "r") as f:
+            resume_text = f.read()
+
+        with open("sample_data/job_description.txt", "r") as f:
+            job_description = f.read()
+
+    except FileNotFoundError as e:
+        print(f"File error: {e}")
+        return
 
     print("\nScreening Candidate...\n")
 

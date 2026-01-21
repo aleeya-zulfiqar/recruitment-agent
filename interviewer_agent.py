@@ -1,8 +1,8 @@
 """
-Agent 2: Interviewer Agent (OpenRouter API)
------------------------------------------------------
-Adaptive, role-specific interviewer agent.
-Asks up to 5 questions, saves answers, asks clarifying questions only if needed.
+Agent 2: Interviewer Agent (OpenRouterAI)
+--------------------------------------------
+Generates role-specific interview questions
+based on candidate resume and screening signal.
 """
 
 import os
@@ -12,124 +12,122 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-if not OPENAI_API_KEY:
-    raise ValueError("OpenAI API key missing in .env")
+OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
+API_URL = os.getenv("OPENROUTER_API_URL")
+MODEL = os.getenv("OPENROUTER_MODEL", "gpt-4o-mini")
 
-MODEL = "gpt-4o-mini"
-API_URL = "https://openrouter.ai/api/v1/chat/completions"
+if not OPENROUTER_API_KEY or not API_URL:
+    raise ValueError("OpenRouterAI API key missing in .env")
 
+def generate_questions(candidate_info: dict, job: dict, screening: dict) -> dict:
+    role = job.get("title", "the role")
+    resume_text = candidate_info.get("resume_text", "")
+    screening_decision = screening.get("decision", "")
+    match_score = screening.get("match_score", "unknown")
 
-class InterviewerAgent:
-    def __init__(self, role: str, candidate_info: str):
-        self.role = role
-        self.candidate_info = candidate_info
-        self.conversation_history = []  # stores question/answer pairs
-        self.max_questions = 5
+    system_prompt = f"""
+You are a structured interviewer for the role: {role}.
 
-    def ask_question(self) -> str:
-        """
-        Call OpenRouter API to get the next question based on conversation history
-        """
-        system_prompt = f"""
-You are a structured interviewer for the role: {self.role}.
 Rules:
-- Ask a maximum of {self.max_questions} role-specific questions.
-- Follow the rubric strictly (skills, experience, problem-solving).
-- Do NOT engage in free-form chat.
-- Ask follow-up questions only if previous answer is ambiguous.
-- Return output ONLY as JSON with:
-  - questions_asked: list of previous questions and answers
-  - next_question: next question to ask (or null if max questions reached)
-  - interview_summary: short assessment at the end
+- Ask a maximum of 5 role-specific questions.
+- Focus on skills, experience, and problem-solving.
+- Adjust difficulty using screening signals.
+- Do NOT add explanations.
+- Return ONLY a valid JSON array of strings.
 """
 
-        user_prompt = f"""
-Candidate information:
-{self.candidate_info}
+    user_prompt = f"""
+Candidate Resume:
+{resume_text}
 
-Conversation history:
-{json.dumps(self.conversation_history, indent=2)}
+Screening Summary:
+Decision: {screening_decision}
+Match Score: {match_score}
 
-Task:
-Ask the next interview question based on the conversation history.
-Return JSON only.
+Generate interview questions now.
 """
 
-        payload = {
-            "model": MODEL,
-            "messages": [
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": user_prompt},
-            ],
-            "temperature": 0.2,
-        }
+    payload = {
+        "model": MODEL,
+        "messages": [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_prompt},
+        ],
+        "temperature": 0.2,
+    }
 
-        headers = {
-            "Authorization": f"Bearer {OPENAI_API_KEY}",
-            "Content-Type": "application/json",
-        }
+    headers = {
+        "Authorization": f"Bearer {OPENROUTER_API_KEY}",
+        "Content-Type": "application/json",
+    }
 
-        try:
-            response = requests.post(API_URL, headers=headers, json=payload, timeout=30)
-            response.raise_for_status()
-            data = response.json()
-            raw_output = data["choices"][0]["message"]["content"]
-            return json.loads(raw_output)
-        except Exception as e:
-            return {"error": f"Failed to get question: {str(e)}", "raw_output": raw_output if 'raw_output' in locals() else ""}
+    response = requests.post(API_URL, headers=headers, json=payload, timeout=30)
+    response.raise_for_status()
 
-    def run_interview(self):
-        """
-        Run the interview loop for up to max_questions
-        """
-        question_count = 0
+    raw_output = response.json()["choices"][0]["message"]["content"].strip()
 
-        while question_count < self.max_questions:
-            result = self.ask_question()
+    if raw_output.startswith("```"):
+        raw_output = raw_output.replace("```json", "").replace("```", "").strip()
 
-            if "error" in result:
-                print(result["error"])
-                break
+    questions = json.loads(raw_output)
 
-            next_question = result.get("next_question")
-            questions_asked = result.get("questions_asked", [])
-            interview_summary = result.get("interview_summary", "")
+    if not isinstance(questions, list):
+        raise ValueError("LLM did not return a list of questions")
 
-            if not next_question:
-                print("\nNo more questions generated by the agent.")
-                break
-
-            # Ask user the next question
-            print(f"\nQuestion {question_count + 1}: {next_question}")
-            answer = input("Candidate answer: ").strip()
-
-            # Append to conversation history
-            self.conversation_history = questions_asked
-            self.conversation_history.append({
-                "question": next_question,
-                "candidate_answer": answer
-            })
-
-            question_count += 1
-
-        # Final interview summary
-        print("\nInterview Summary:")
-        print(interview_summary)
-        print("\nFull Q&A:")
-        print(json.dumps(self.conversation_history, indent=2))
+    return {
+        "candidate": candidate_info,
+        "job": job,
+        "screening": screening,
+        "questions": questions
+    }
 
 
 def main():
-    role = "Frontend Developer"
-    candidate_info = """
-Frontend Developer Intern with experience in React, JavaScript,
-API integration, and UI development. Worked on production MVPs
-using React and Tailwind CSS.
-"""
+    """
+    Test run Agent 2
+    """
 
-    agent = InterviewerAgent(role, candidate_info)
-    agent.run_interview()
+    try:
+        with open("sample_data/resume.txt", "r") as f:
+            resume_text = f.read()
+
+        with open("sample_data/job_description.txt", "r") as f:
+            job_description = f.read()
+
+    except FileNotFoundError as e:
+        print(f"File error: {e}")
+        return
+
+    # Mock inputs
+    candidate_info = {
+        "name": "Test Candidate",
+        "email": "test@example.com",
+        "resume_text": resume_text
+    }
+
+    job = {
+        "title": "Frontend Developer",
+        "description": job_description
+    }
+
+    screening = {
+        "match_score": 95,
+        "matched_skills": ["React", "JavaScript", "REST APIs"],
+        "missing_skills": [],
+        "experience_level": "Senior",
+        "decision": "Strong Fit",
+        "reasoning": "Candidate matches role well"
+    }
+
+    print("\nGenerating Interview Questions...\n")
+
+    result = generate_questions(
+        candidate_info=candidate_info,
+        job=job,
+        screening=screening
+    )
+
+    print(json.dumps(result, indent=2))
 
 
 if __name__ == "__main__":
